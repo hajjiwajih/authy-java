@@ -41,14 +41,7 @@ public class TestUsers extends TestApiBase {
             "    <success type=\"boolean\">true</success>" +
             "</hash>";
 
-    private final String successCreateUserResponse = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" +
-            "<hash>" +
-            "    <message>User created successfully.</message>" +
-            "    <user>" +
-            "        <id type=\"integer\">1000</id>" +
-            "    </user>" +
-            "    <success type=\"boolean\">true</success>" +
-            "</hash>"; ;
+    private final String successCreateUserResponse = "{\"message\":\"User created successfully.\",\"user\":{\"id\":1000},\"success\":true}";
 
     @Before
     public void setUp() {
@@ -57,23 +50,22 @@ public class TestUsers extends TestApiBase {
 
     @Test
     public void testCreateUser() throws AuthyException {
-        stubFor(post(urlPathEqualTo("/protected/xml/users/new"))
+        stubFor(post(urlPathEqualTo("/protected/json/users/new"))
                 .willReturn(aResponse()
                         .withStatus(200)
-                        .withHeader("Content-Type", "application/xml")
+                        .withHeader("Content-Type", "application/json")
                         .withBody(successCreateUserResponse)));
 
         final User user = client.createUser("test@example.com", "3003003333", "57");
 
-        verify(postRequestedFor(urlPathEqualTo("/protected/xml/users/new" ))
+        verify(postRequestedFor(urlPathEqualTo("/protected/json/users/new" ))
                 .withHeader("X-Authy-API-Key", equalTo(testApiKey))
-                .withHeader("Content-Type", equalTo("application/xml"))
-                .withRequestBody(equalToXml("<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>" +
-                        "<user>" +
-                        "<cellphone>3003003333</cellphone>" +
-                        "<country_code>57</country_code>" +
-                        "<email>test@example.com</email>" +
-                        "</user>")));
+                .withHeader("Content-Type", equalTo("application/json"))
+                .withRequestBody(equalToJson("{"
+                        + "  \"countryCode\" : \"57\","
+                        + "  \"cellphone\" : \"3003003333\","
+                        + "  \"email\" : \"test@example.com\""
+                        + "}")));
         assertEquals(1000, user.getId());
         assertTrue(user.isOk());
     }
@@ -256,5 +248,15 @@ public class TestUsers extends TestApiBase {
         assertFalse(response.isOk());
         assertThat(response.getStatus(), is(404));
         assertThat(response.getError().getMessage(), containsString("User doesn't exist"));
+
+        // TODO: Verify request
+//        verify(postRequestedFor(urlPathEqualTo("/protected/json/users/new" ))
+//                .withHeader("X-Authy-API-Key", equalTo(testApiKey))
+//                .withHeader("Content-Type", equalTo("application/json"))
+//                .withRequestBody(equalToJson("{"
+//                        + "  \"countryCode\" : \"57\","
+//                        + "  \"cellphone\" : \"3003003333\","
+//                        + "  \"email\" : \"test@example.com\""
+//                        + "}")));
     }
 }

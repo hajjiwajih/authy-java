@@ -90,12 +90,6 @@ public class Hash extends Instance implements Formattable {
         return xml;
     }
 
-    // required to satisfy Formattable interface
-    // required to satisfy Formattable interface
-    public String toJSON() {
-        return new JSONObject(toMap()).toString();
-    }
-
     /**
      * Map a Token instance to its Java's Map representation.
      *

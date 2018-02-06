@@ -12,6 +12,12 @@ public interface Formattable {
 
     Map<String, String> toMap();
 
-    String toJSON();
+    default String toJSON() {
+        org.json.JSONObject json = new org.json.JSONObject();
+        for (Map.Entry<String, String> entry : toMap().entrySet()) {
+            json.put(entry.getKey(), entry.getValue());
+        }
 
+        return json.toString();
+    }
 }

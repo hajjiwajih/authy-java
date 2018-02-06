@@ -21,18 +21,18 @@ import javax.xml.transform.stream.StreamSource;
  * @author Julian Camargo
  */
 public class Users extends Resource {
-    public static final String NEW_USER_PATH = "/protected/xml/users/new";
-    public static final String DELETE_USER_PATH = "/protected/xml/users/delete/";
-    public static final String SMS_PATH = "/protected/xml/sms/";
-    public static final String ONE_CODE_CALL_PATH = "/protected/xml/call/";
+    public static final String NEW_USER_PATH = "/protected/json/users/new";
+    public static final String DELETE_USER_PATH = "/protected/json/users/delete/";
+    public static final String SMS_PATH = "/protected/json/sms/";
+    public static final String ONE_CODE_CALL_PATH = "/protected/json/call/";
     public static final String DEFAULT_COUNTRY_CODE = "1";
 
     public Users(String uri, String key) {
-        super(uri, key);
+        super(uri, key, Resource.JSON_CONTENT_TYPE);
     }
 
     public Users(String uri, String key, boolean testFlag) {
-        super(uri, key, testFlag);
+        super(uri, key, testFlag, Resource.JSON_CONTENT_TYPE);
     }
 
     /**
@@ -48,7 +48,7 @@ public class Users extends Resource {
 
         String content = this.post(NEW_USER_PATH, user);
 
-        return userFromXml(this.getStatus(), content);
+        return userFromJson(this.getStatus(), content);
     }
 
     /**
@@ -119,26 +119,28 @@ public class Users extends Resource {
         return instanceFromXml(this.getStatus(), content);
     }
 
-    private com.authy.api.User userFromXml(int status, String content) throws AuthyException {
+    private com.authy.api.User userFromJson(int status, String content) throws AuthyException {
         com.authy.api.User user = new com.authy.api.User();
-
-        try {
-            Error error = errorFromXml(status, content);
-
-            if (error == null) {
-                JAXBContext context = JAXBContext.newInstance(Hash.class);
-                Unmarshaller unmarshaller = context.createUnmarshaller();
-
-                StringReader xml = new StringReader(content);
-                Hash hash = (Hash) unmarshaller.unmarshal(new StreamSource(xml));
-                user = hash.getUser();
-                user.message = hash.getMessage();
-            }
-            user.status = status;
-            user.setError(error);
-        } catch (JAXBException e) {
-            throw new AuthyException("Invalid response from server", e);
-        }
+        user.setStatus(status);
+        JSONObject userJson = new JSONObject(content);
+        user.setId(userJson.getJSONObject("user").getInt("id"));
+//        try {
+//            Error error = errorFromXml(status, content);
+//
+//            if (error == null) {
+//                JAXBContext context = JAXBContext.newInstance(Hash.class);
+//                Unmarshaller unmarshaller = context.createUnmarshaller();
+//
+//                StringReader xml = new StringReader(content);
+//                Hash hash = (Hash) unmarshaller.unmarshal(new StreamSource(xml));
+//                user = hash.getUser();
+//                user.message = hash.getMessage();
+//            }
+//            user.status = status;
+//            user.setError(error);
+//        } catch (JAXBException e) {
+//            throw new AuthyException("Invalid response from server", e);
+//        }
         return user;
     }
 
@@ -187,11 +189,6 @@ public class Users extends Resource {
 
         public Map<String, String> toMap() {
             return options;
-        }
-
-        // required to satisfy Formattable interface
-        public String toJSON() {
-            return new JSONObject(toMap()).toString();
         }
     }
 
@@ -260,11 +257,6 @@ public class Users extends Resource {
             map.put("countryCode", countryCode);
 
             return map;
-        }
-
-        // required to satisfy Formattable interface
-        public String toJSON() {
-            return new JSONObject(toMap()).toString();
         }
     }
 }
