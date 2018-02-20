@@ -82,6 +82,7 @@ public class Users extends Resource {
     public Hash requestSms(int userId, Map<String, String> options) throws AuthyException {
         MapToResponse opt = new MapToResponse(options);
         String content = this.get(SMS_PATH + Integer.toString(userId), opt);
+        if (get el status)
         return instanceFromXml(this.getStatus(), content);
     }
 
@@ -122,26 +123,21 @@ public class Users extends Resource {
     private com.authy.api.User userFromJson(int status, String content) throws AuthyException {
         com.authy.api.User user = new com.authy.api.User();
         user.setStatus(status);
-        JSONObject userJson = new JSONObject(content);
-        user.setId(userJson.getJSONObject("user").getInt("id"));
-//        try {
-//            Error error = errorFromXml(status, content);
-//
-//            if (error == null) {
-//                JAXBContext context = JAXBContext.newInstance(Hash.class);
-//                Unmarshaller unmarshaller = context.createUnmarshaller();
-//
-//                StringReader xml = new StringReader(content);
-//                Hash hash = (Hash) unmarshaller.unmarshal(new StreamSource(xml));
-//                user = hash.getUser();
-//                user.message = hash.getMessage();
-//            }
-//            user.status = status;
-//            user.setError(error);
-//        } catch (JAXBException e) {
-//            throw new AuthyException("Invalid response from server", e);
-//        }
+        if (user.isOk()) {
+            JSONObject userJson = new JSONObject(content);
+            user.setId(userJson.getJSONObject("user").getInt("id"));
+        } else {
+            Error error = errorFromJson(status, content);
+            user.setError(error);
+        }
         return user;
+    }
+
+    private Error errorFromJson(int status, String content) {
+        JSONObject errorJson = new JSONObject(content);
+        Error error = new Error();
+        error.setMessage(errorJson.getString("message"));
+        return error;
     }
 
     private Error errorFromXml(int status, String content) {
@@ -257,6 +253,13 @@ public class Users extends Resource {
             map.put("countryCode", countryCode);
 
             return map;
+        }
+
+        @Override
+        public String toJSON() {
+            JSONObject json = new JSONObject();
+            json.put("user", toMap());
+            return json.toString();
         }
     }
 }
